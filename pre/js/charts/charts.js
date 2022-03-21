@@ -24,14 +24,107 @@ export function initChart(iframe) {
     d3.csv('https://raw.githubusercontent.com/CarlosMunozDiazCSIC/informe_perfil_mayores_2022_economia_3_7/main/data/regimen_tenencia_principal_v2.csv', function(error,data) {
         if (error) throw error;
 
-        console.log(data);
+        //Declaramos fuera las variables genéricas
+        let margin = {top: 20, right: 20, bottom: 20, left: 35},
+            width = document.getElementById('chart').clientWidth - margin.left - margin.right,
+            height = document.getElementById('chart').clientHeight - margin.top - margin.bottom;
+
+        let svg = d3.select("#chart")
+            .append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+        let gruposRegimen = ['propiedad','alquiler','alquiler_inferior','cesion'];
+
+        let x = d3.scaleLinear()
+            .domain([-0.5,5.5])
+            .range([0, width]);
+
+        let tickLabels = ['Total','16 a 29','30 a 44','45 a 64','65+'];
+
+        let xAxis = function(g){
+            g.call(d3.axisBottom(x).ticks(5).tickValues([0,2,3,4,5]).tickFormat((d,i) => tickLabels[i]))
+        }
+        
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+        
+        let y = d3.scaleLinear()
+            .domain([0, 100])
+            .range([height, 0]);
+
+        svg.append("g")
+            .attr("class", "yaxis")
+            .call(d3.axisLeft(y));
+
+        let color = d3.scaleOrdinal()
+            .domain(gruposRegimen)
+            .range([COLOR_PRIMARY_1, COLOR_COMP_2, COLOR_COMP_1, COLOR_OTHER_1]);
+
+        let stackedDataRegimen = d3.stack()
+            .keys(gruposRegimen)
+            (data);
 
         function init() {
-
+            svg.append("g")
+                .attr('class','chart-g')
+                .selectAll("g")
+                .data(stackedDataRegimen)
+                .enter()
+                .append("g")
+                .attr("fill", function(d) { return color(d.key); })
+                .selectAll("rect")
+                .data(function(d) { return d; })
+                .enter()
+                .append("rect")
+                    .attr('class','prueba')
+                    .attr("x", function(d) {
+                        if(document.getElementById('chart').clientWidth < 400) {
+                            return x(d.data.id) - 15;
+                        } else {
+                            return x(d.data.id) - 25;
+                        }
+                    })
+                    .attr("y", function(d) { return y(0); })
+                    .attr("height", function(d) { return 0; })
+                    .attr("width", function() {
+                        if(document.getElementById('chart').clientWidth < 400) {
+                            return '30px';
+                        } else {
+                            return '50px';
+                        }
+                    })
+                    .transition()
+                    .duration(2000)
+                    .attr("y", function(d) { return y(d[1]); })
+                    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
         }
 
         function animateChart() {
-            
+            svg.selectAll('.prueba')
+                .attr("x", function(d) {
+                    if(document.getElementById('chart').clientWidth < 400) {
+                        return x(d.data.id) - 15;
+                    } else {
+                        return x(d.data.id) - 25;
+                    }
+                })
+                .attr("y", function(d) { return y(0); })
+                .attr("height", function(d) { return 0; })
+                .attr("width", function() {
+                    if(document.getElementById('chart').clientWidth < 400) {
+                        return '30px';
+                    } else {
+                        return '50px';
+                    }
+                })
+                .transition()
+                .duration(2000)
+                .attr("y", function(d) { return y(d[1]); })
+                .attr("height", function(d) { return y(d[0]) - y(d[1]); });
         }
 
         //////
@@ -55,13 +148,16 @@ export function initChart(iframe) {
         setRRSSLinks('distribucion_regimen_tenencia');
 
         //Captura de pantalla de la visualización
-        setChartCanvas();
-        setCustomCanvas();
+        //setChartCanvas();
+        setTimeout(() => {
+            setCustomCanvas();
+        }, 6000);
+        
 
         let pngDownload = document.getElementById('pngImage');
 
         pngDownload.addEventListener('click', function(){
-            setChartCanvasImage('distribucion_regimen_tenencia');
+            //setChartCanvasImage('distribucion_regimen_tenencia');
             setChartCustomCanvasImage('distribucion_regimen_tenencia');
         });
 

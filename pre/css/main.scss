@@ -80,6 +80,7 @@ body, button {
         &__legend {
             margin-top: 8px;
             display: flex;
+            flex-wrap: wrap;
 
             &--item {
                 position: relative;

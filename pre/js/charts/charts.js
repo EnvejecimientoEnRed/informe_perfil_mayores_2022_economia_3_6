@@ -26,6 +26,14 @@ export function initChart(iframe) {
 
         console.log(data);
 
+        function init() {
+
+        }
+
+        function animateChart() {
+            
+        }
+
         //////
         ///// Resto - Chart
         //////
@@ -59,7 +67,5 @@ export function initChart(iframe) {
 
         //Altura del frame
         setChartHeight(iframe);
-    });
-
-    
+    });    
 }

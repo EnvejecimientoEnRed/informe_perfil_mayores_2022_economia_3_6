@@ -21,7 +21,7 @@ COLOR_OTHER_2 = '#731854';
 
 export function initChart(iframe) {
     //Lectura de datos
-    d3.csv('https://raw.githubusercontent.com/CarlosMunozDiazCSIC/informe_perfil_mayores_2022_economia_3_7/main/data/regimen_tenencia_principal_v2.csv', function(error,data) {
+    d3.csv('https://raw.githubusercontent.com/CarlosMunozDiazCSIC/informe_perfil_mayores_2022_economia_3_6/main/data/regimen_tenencia_principal_v2.csv', function(error,data) {
         if (error) throw error;
 
         //Declaramos fuera las variables genéricas
@@ -142,7 +142,7 @@ export function initChart(iframe) {
         //////
 
         //Iframe
-        setFixedIframeUrl('informe_perfil_mayores_2022_economia_3_7','distribucion_regimen_tenencia');
+        setFixedIframeUrl('informe_perfil_mayores_2022_economia_3_6','distribucion_regimen_tenencia');
 
         //Redes sociales > Antes tenemos que indicar cuál sería el texto a enviar
         setRRSSLinks('distribucion_regimen_tenencia');

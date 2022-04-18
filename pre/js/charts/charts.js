@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 //import { numberWithCommas2 } from './helpers';
 //import { getInTooltip, getOutTooltip, positionTooltip } from './modules/tooltip';
 import { setChartHeight } from '../modules/height';
-import { setChartCanvas, setChartCanvasImage, setCustomCanvas, setChartCustomCanvasImage } from '../modules/canvas-image';
+import { setChartCanvas, setChartCanvasImage } from '../modules/canvas-image';
 import { setRRSSLinks } from '../modules/rrss';
 import { setFixedIframeUrl } from './chart_helpers';
 
@@ -148,17 +148,12 @@ export function initChart(iframe) {
         setRRSSLinks('distribucion_regimen_tenencia');
 
         //Captura de pantalla de la visualización
-        //setChartCanvas();
-        setTimeout(() => {
-            setCustomCanvas();
-        }, 6000);
-        
+        setChartCanvas();        
 
         let pngDownload = document.getElementById('pngImage');
 
         pngDownload.addEventListener('click', function(){
-            //setChartCanvasImage('distribucion_regimen_tenencia');
-            setChartCustomCanvasImage('distribucion_regimen_tenencia');
+            setChartCanvasImage('distribucion_regimen_tenencia');
         });
 
         //Altura del frame

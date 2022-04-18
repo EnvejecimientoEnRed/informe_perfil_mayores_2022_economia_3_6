@@ -12,7 +12,7 @@ function setChartHeight(iframe) {
         let footerBlock = document.getElementsByClassName('chart__footer')[0].clientHeight;
         let footerTop = 8, containerPadding = 8;
 
-        //Comprobar previamente la altura que le demos al MAIN. El estado base es 588 pero podemos hacerlo más o menos alto en función de nuestros intereses
+        //Comprobar previamente la altura que le demos al MAIN
 
         let height = 624; //Altura total del main
         document.getElementsByClassName('chart__viz')[0].style.height = height - titleBlock - logicBlock - footerBlock - footerTop - containerPadding + 'px';

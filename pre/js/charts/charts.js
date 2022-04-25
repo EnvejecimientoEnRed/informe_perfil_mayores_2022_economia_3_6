@@ -1,23 +1,26 @@
 //Desarrollo de las visualizaciones
 import * as d3 from 'd3';
-//import { numberWithCommas2 } from './helpers';
-//import { getInTooltip, getOutTooltip, positionTooltip } from './modules/tooltip';
+import { numberWithCommas3 } from '../helpers';
+import { getInTooltip, getOutTooltip, positionTooltip } from '../modules/tooltip';
 import { setChartHeight } from '../modules/height';
 import { setChartCanvas, setChartCanvasImage } from '../modules/canvas-image';
 import { setRRSSLinks } from '../modules/rrss';
 import { setFixedIframeUrl } from './chart_helpers';
 
 //Colores fijos
-const COLOR_PRIMARY_1 = '#F8B05C', 
-COLOR_PRIMARY_2 = '#E37A42',
-COLOR_COMP_1 = '#528FAD', 
-COLOR_COMP_2 = '#AADCE0',
-COLOR_GREY_1 = '#D6D6D6', 
-COLOR_GREY_2 = '#A3A3A3',
-COLOR_ANAG__PRIM_1 = '#BA9D5F', 
+const COLOR_PRIMARY_1 = '#F8B05C',
+COLOR_ANAG_PRIM_1 = '#BA9D5F', 
 COLOR_ANAG_PRIM_2 = '#9E6C51',
-COLOR_ANAG_PRIM_3 = '#9E3515',
-COLOR_ANAG_COMP_1 = '#1C5A5E';
+COLOR_ANAG_PRIM_3 = '#9E3515';
+let tooltip = d3.select('#tooltip');
+
+//Diccionario
+let dictionary = {
+    propiedad: 'Propiedad',
+    alquiler: 'Alquiler a precio de mercado',
+    alquiler_inferior: 'Alquiler inferior a precio de mercado',
+    cesion: 'Cesión gratuita'
+};
 
 export function initChart(iframe) {
     //Lectura de datos
@@ -25,7 +28,7 @@ export function initChart(iframe) {
         if (error) throw error;
 
         //Declaramos fuera las variables genéricas
-        let margin = {top: 20, right: 20, bottom: 20, left: 35},
+        let margin = {top: 10, right: 10, bottom: 20, left: 32.5},
             width = document.getElementById('chart').clientWidth - margin.left - margin.right,
             height = document.getElementById('chart').clientHeight - margin.top - margin.bottom;
 
@@ -42,10 +45,12 @@ export function initChart(iframe) {
             .domain([-0.5,5.5])
             .range([0, width]);
 
-        let tickLabels = ['Total','16 a 29','30 a 44','45 a 64','65+'];
+        let tickLabels = ['Total','16-29','30-44','45-64','65+'];
 
         let xAxis = function(g){
-            g.call(d3.axisBottom(x).ticks(5).tickValues([0,2,3,4,5]).tickFormat((d,i) => tickLabels[i]))
+            g.call(d3.axisBottom(x).ticks(5).tickValues([0,2,3,4,5]).tickFormat((d,i) => tickLabels[i]));            
+            svg.call(function(g){g.selectAll('.tick line').remove()});
+            svg.call(function(g){g.selectAll('.domain').remove()});
         }
         
         svg.append("g")
@@ -56,13 +61,29 @@ export function initChart(iframe) {
             .domain([0, 100])
             .range([height, 0]);
 
+        let yAxis = function(svg) {
+            svg.call(d3.axisLeft(y).ticks(5).tickFormat(function(d,i) { return numberWithCommas3(d); }));
+            svg.call(function(g) {
+                g.call(function(g){
+                    g.selectAll('.tick line')
+                        .attr('class', function(d,i) {
+                            if (d == 0) {
+                                return 'line-special';
+                            }
+                        })
+                        .attr('x1', '0%')
+                        .attr('x2', `${width}`)
+                });
+            });
+        }
+
         svg.append("g")
             .attr("class", "yaxis")
-            .call(d3.axisLeft(y));
+            .call(yAxis);
 
         let color = d3.scaleOrdinal()
             .domain(gruposRegimen)
-            .range([COLOR_PRIMARY_1, COLOR_COMP_2, COLOR_COMP_1, COLOR_OTHER_1]);
+            .range([COLOR_PRIMARY_1, COLOR_ANAG_PRIM_1, COLOR_ANAG_PRIM_2, COLOR_ANAG_PRIM_3]);
 
         let stackedDataRegimen = d3.stack()
             .keys(gruposRegimen)
@@ -76,35 +97,72 @@ export function initChart(iframe) {
                 .enter()
                 .append("g")
                 .attr("fill", function(d) { return color(d.key); })
+                .attr("class", function(d,i) {
+                    return 'serie serie-' + d.key;
+                })
                 .selectAll("rect")
                 .data(function(d) { return d; })
                 .enter()
                 .append("rect")
-                    .attr('class','prueba')
-                    .attr("x", function(d) {
-                        if(document.getElementById('chart').clientWidth < 400) {
-                            return x(d.data.id) - 15;
-                        } else {
-                            return x(d.data.id) - 25;
-                        }
-                    })
-                    .attr("y", function(d) { return y(0); })
-                    .attr("height", function(d) { return 0; })
-                    .attr("width", function() {
-                        if(document.getElementById('chart').clientWidth < 400) {
-                            return '30px';
-                        } else {
-                            return '50px';
-                        }
-                    })
-                    .transition()
-                    .duration(2000)
-                    .attr("y", function(d) { return y(d[1]); })
-                    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
+                .attr('class','rect')
+                .attr("x", function(d) {
+                    if(document.getElementById('chart').clientWidth < 400) {
+                        return x(d.data.id) - 15;
+                    } else {
+                        return x(d.data.id) - 25;
+                    }
+                })
+                .attr("y", function(d) { return y(0); })
+                .attr("height", function(d) { return 0; })
+                .attr("width", function() {
+                    if(document.getElementById('chart').clientWidth < 400) {
+                        return '30px';
+                    } else {
+                        return '50px';
+                    }
+                })
+                .on('mouseover', function(d,i,e) {
+                    //Opacidad en barras
+                    let bars = svg.selectAll('.rect');
+                    let parentElem = svg.select(`.${this.parentNode.classList.value.split(' ')[1]}`);
+                    let childElems = parentElem.selectAll('.rect');            
+            
+                    bars.each(function() {
+                        this.style.opacity = '0.4';
+                    });
+                    childElems.each(function() {
+                        this.style.opacity = '1';
+                    });
+
+                    //Tooltip
+                    let currentType = this.parentNode.classList.value.split(' ')[1];
+                    let html = '<p class="chart__tooltip--title">' + dictionary[currentType.split('-')[1]] + '</p>' + 
+                            '<p class="chart__tooltip--text">Este tipo de régimen de tenencia de la vivienda principal representa el <b>' + numberWithCommas3(d.data[currentType.split('-')[1]]) + '%</b> para este grupo de edad (<b>' + d.data.edad_2_persona_referencia + '</b>)</p>';
+                    
+                    tooltip.html(html);
+
+                    //Tooltip
+                    positionTooltip(window.event, tooltip);
+                    getInTooltip(tooltip);
+                })
+                .on('mouseout', function(d,i,e) {
+                    //Opacidad
+                    let bars = svg.selectAll('.rect');
+                    bars.each(function() {
+                        this.style.opacity = '1';
+                    });
+
+                    //Quitamos el tooltip
+                    getOutTooltip(tooltip);
+                })
+                .transition()
+                .duration(2000)
+                .attr("y", function(d) { return y(d[1]); })
+                .attr("height", function(d) { return y(d[0]) - y(d[1]); });
         }
 
         function animateChart() {
-            svg.selectAll('.prueba')
+            svg.selectAll('.rect')
                 .attr("x", function(d) {
                     if(document.getElementById('chart').clientWidth < 400) {
                         return x(d.data.id) - 15;
